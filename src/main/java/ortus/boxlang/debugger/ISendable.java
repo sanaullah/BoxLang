@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.jr.ob.JSON;
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -42,7 +43,8 @@ public interface ISendable {
 	 */
 	default public String toJSON() {
 		try {
-			return JsonUtil.getJsonBuilder().asString( this );
+			JSON json = JsonUtil.getJsonBuilder();
+			return json.with( JSON.Feature.WRITE_NULL_PROPERTIES ).asString( this );
 		} catch ( JSONObjectException e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
