@@ -474,13 +474,27 @@ public class DateTimeHelper {
 	 */
 	public static LocalDateTime dateTimeAdd( LocalDateTime target, long amount, TimeUnit timeUnit ) {
 		return switch ( timeUnit ) {
-			case DAYS -> target.plusDays( amount );
-			case HOURS -> target.plusHours( amount );
-			case MINUTES -> target.plusMinutes( amount );
-			case MILLISECONDS -> target.plusSeconds( amount / 1000 );
-			case MICROSECONDS -> target.plusNanos( amount * 1000 );
-			case NANOSECONDS -> target.plusNanos( amount );
-			default -> target.plusSeconds( amount );
+			case DAYS -> {
+				yield target.plusDays( amount );
+			}
+			case HOURS -> {
+				yield target.plusHours( amount );
+			}
+			case MINUTES -> {
+				yield target.plusMinutes( amount );
+			}
+			case MILLISECONDS -> {
+				yield target.plusSeconds( amount / 1000 );
+			}
+			case MICROSECONDS -> {
+				yield target.plusNanos( amount * 1000 );
+			}
+			case NANOSECONDS -> {
+				yield target.plusNanos( amount );
+			}
+			default -> {
+				yield target.plusSeconds( amount );
+			}
 		};
 	}
 

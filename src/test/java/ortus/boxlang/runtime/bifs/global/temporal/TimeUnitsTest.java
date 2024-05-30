@@ -22,9 +22,7 @@ package ortus.boxlang.runtime.bifs.global.temporal;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.time.Year;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
 import java.time.temporal.WeekFields;
@@ -278,9 +276,9 @@ public class TimeUnitsTest {
 		assertEquals( result, refDaysInYear );
 	}
 
-	@DisplayName( "It tests the BIF DayOfWeek" )
+	@DisplayName( "It tests the BIF DayOfWeek with system Locale" )
 	@Test
-	public void testBifDayOfWeek() {
+	public void testBifDayOfWeekWithSystemLocale() {
 		Integer refDayOfWeek = ZonedDateTime.now().get( WeekFields.of( locale ).dayOfWeek() );
 		instance.executeSource(
 		    """
@@ -292,18 +290,18 @@ public class TimeUnitsTest {
 		assertEquals( result, refDayOfWeek );
 	}
 
-	@DisplayName( "it should match Sunday which is day number 7 [BIF DayOfWeek]" )
+	@DisplayName( "It tests the BIF DayOfWeek with parse date/time" )
 	@Test
-	public void testBifDayOfWeekFromDateString() {
+	public void testBifDayOfWeekWithParseDateTime() {
+		Integer refDayOfWeek = LocalDate.of( 2024, Month.APRIL, 7 ).getDayOfWeek().getValue();
 		instance.executeSource(
 		    """
-		    dateString = parseDateTime( "2024-04-07" );
-		       result = dayOfWeek( dateString );
+		    now = parseDateTime( "2024-04-07" );
+		       result = dayOfWeek( now );
 		       """,
 		    context );
-
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
-		assertEquals( 7, result );
+		assertEquals( refDayOfWeek, result );
 	}
 
 	@DisplayName( "It tests the DateTime Member function DayOfWeek" )
