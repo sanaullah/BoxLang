@@ -130,7 +130,7 @@ public class DateTimeFormatTest {
 		          """,
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
-		assertThat( result ).isEqualTo( "12/31/2023 12:30 PM" );
+		assertThat( result ).isEqualTo( "12/31/2023 12:30 pm" );
 		// Default Format
 		instance.executeSource(
 		    """
@@ -338,7 +338,7 @@ public class DateTimeFormatTest {
 		          """,
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
-		assertThat( result ).isEqualTo( "12:30 PM" );
+		assertThat( result ).isEqualTo( "12:30 pm" );
 		// Custom Format
 		instance.executeSource(
 		    """

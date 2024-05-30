@@ -121,7 +121,7 @@ public class CreateODBCDateTimeTest {
 	@DisplayName( "It tests the BIF CreateODBCTime" )
 	@Test
 	public void testCreateODBCTime() {
-		DateTime	dateRef				= new DateTime( "23:59:59" );
+		DateTime	dateRef				= new DateTime( "2024-04-07T23:59:59" );
 		String		refFormattedDate	= dateRef.format( DateTime.ODBC_TIME_FORMAT_MASK );
 		variables.put( Key.of( "date" ), dateRef );
 		instance.executeSource(
@@ -136,7 +136,7 @@ public class CreateODBCDateTimeTest {
 	@DisplayName( "It tests the Member function DateTime.toODBCTime" )
 	@Test
 	public void testMemberToODBCTime() {
-		DateTime	dateRef				= new DateTime( "23:59:59" );
+		DateTime	dateRef				= new DateTime( "2024-04-07T23:59:59" );
 		String		refFormattedDate	= dateRef.format( DateTime.ODBC_TIME_FORMAT_MASK );
 		variables.put( Key.of( "date" ), dateRef );
 		instance.executeSource(
