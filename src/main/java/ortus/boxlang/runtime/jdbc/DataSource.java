@@ -72,15 +72,27 @@ public class DataSource implements Comparable<DataSource> {
 	}
 
 	/**
-	 * Create a new DataSource object from a struct of properties, performing the necessary conversion from BL-style property names to Hikari-style
-	 * config names.
+	 * Helper builder to build out a new DataSource object from a struct of properties and a name.
 	 *
-	 * @param config A struct of properties to configure the datasource. Will likely be defined via <code>Application.bx</code> or a web admin.
+	 * @param name       The string name of the datasource.
+	 * @param properties A struct of properties to configure the datasource. Will likely be defined via <code>Application.bx</code> or a web admin.
 	 *
 	 * @return a DataSource object configured from the provided struct.
 	 */
-	public static DataSource fromStruct( IStruct config ) {
-		return new DataSource( DatasourceConfig.fromStruct( config ) );
+	public static DataSource fromStruct( String name, IStruct properties ) {
+		return fromStruct( Key.of( name ), properties );
+	}
+
+	/**
+	 * Helper builder to build out a new DataSource object from a struct of properties and a name.
+	 *
+	 * @param name       The name of the datasource.
+	 * @param properties A struct of properties to configure the datasource. Will likely be defined via <code>Application.bx</code> or a web admin.
+	 *
+	 * @return a DataSource object configured from the provided struct.
+	 */
+	public static DataSource fromStruct( Key name, IStruct properties ) {
+		return new DataSource( new DatasourceConfig( name, properties ) );
 	}
 
 	/**
@@ -370,4 +382,29 @@ public class DataSource implements Comparable<DataSource> {
 		return this.hikariDataSource.getUsername().equals( username ) && hikariDataSource.getPassword().equals( password );
 	}
 
+	/**
+	 * Allow access to the underlying HikariDataSource object.
+	 *
+	 * @return The HikariDataSource object.
+	 */
+	public HikariDataSource getHikariDataSource() {
+		return this.hikariDataSource;
+	}
+
+	/**
+	 * Get the current pool statistics for the datasource.
+	 *
+	 * @return A struct containing the current pool statistics, including active connections, idle connections, and total connections.
+	 */
+	public IStruct getPoolStats() {
+		var pool = this.hikariDataSource.getHikariPoolMXBean();
+		return Struct.of(
+		    "pendingThreads", pool.getThreadsAwaitingConnection(),
+		    "idleConnections", pool.getIdleConnections(),
+		    "totalConnections", pool.getTotalConnections(),
+		    "activeConnections", pool.getActiveConnections(),
+		    "maxConnections", hikariDataSource.getMaximumPoolSize(),
+		    "minConnections", hikariDataSource.getMinimumIdle()
+		);
+	}
 }

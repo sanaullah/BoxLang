@@ -15,6 +15,7 @@
 package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,6 +29,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 /**
@@ -228,6 +230,31 @@ public class ConnectionManager {
 	}
 
 	/**
+	 * Release a JDBC Connection back to the pool. Will not release transactional connections.
+	 *
+	 * @param connection The JDBC connection to release, acquired from ${@link #getConnection(DataSource)}
+	 *
+	 * @return True if the connection was successfully released, otherwise false.
+	 */
+	public boolean releaseConnection( Connection connection ) {
+		if ( isInTransaction() ) {
+			logger.atTrace()
+			    .log( "Am inside transaction context; skipping connection release." );
+			return false;
+		}
+		try {
+			if ( connection == null || connection.isClosed() ) {
+				logger.trace( "Connection is null or already closed; skipping connection release." );
+				return false;
+			}
+			connection.close();
+		} catch ( SQLException e ) {
+			throw new BoxRuntimeException( "Error releasing connection: " + e.getMessage(), e );
+		}
+		return true;
+	}
+
+	/**
 	 * Get a JDBC Connection to a specified datasource.
 	 * <p>
 	 * This method uses the following logic to pull the correct connection for the given query/context:
@@ -289,20 +316,23 @@ public class ConnectionManager {
 		}
 
 		// Discover the datasource name from the settings
-		var		defaultDSN			= ( String ) this.context.getConfigItems( Key.runtime, Key.defaultDatasource );
+		String	defaultDSN			= ( String ) this.context.getConfigItems( Key.runtime, Key.defaultDatasource );
+		Key		defaultDSNKey		= Key.of( defaultDSN );
 		IStruct	configDatasources	= ( IStruct ) this.context.getConfigItems( Key.runtime, Key.datasources );
 
 		// If the default name is empty or if the name doesn't exist in the datasources map, we return null
-		if ( defaultDSN.isEmpty() || !configDatasources.containsKey( defaultDSN ) ) {
+		if ( defaultDSN.isEmpty() || !configDatasources.containsKey( defaultDSNKey ) ) {
 			return null;
 		}
 
 		// Get the datasource config and incorporate the application name
-		IStruct targetConfig = configDatasources.getAsStruct( Key.of( defaultDSN ) );
-		targetConfig.put( Key.applicationName, getApplicationName().getName() );
+		IStruct				targetConfig	= configDatasources.getAsStruct( defaultDSNKey );
 
-		// Build it up back to the config with overrides
-		this.defaultDatasource = this.datasourceService.register( DatasourceConfig.fromStruct( targetConfig ) );
+		// Build the DataSourceConfig object from the incoming struct of settings
+		DatasourceConfig	dsn				= new DatasourceConfig( defaultDSNKey )
+		    .process( targetConfig )
+		    .withAppName( getApplicationName() );
+		this.defaultDatasource = this.datasourceService.register( dsn );
 
 		return this.defaultDatasource;
 	}
@@ -346,8 +376,28 @@ public class ConnectionManager {
 			return null;
 		}
 
-		// Else we build it out, cache it and return it
-		return register( datasourceName, configDatasources.getAsStruct( datasourceName ) );
+		// Build out the config from the struct first.
+		DatasourceConfig	dsnConfig	= new DatasourceConfig( datasourceName )
+		    .process( configDatasources.getAsStruct( datasourceName ) )
+		    .withAppName( getApplicationName() );
+		// Register the datasource
+		DataSource			dsn			= this.datasourceService.register( dsnConfig );
+		// Cache it
+		this.datasources.put( datasourceName, dsn );
+
+		return dsn;
+	}
+
+	/**
+	 * Register a datasource with the connection manager.
+	 *
+	 * @param target The datasource to register
+	 *
+	 * @return The datasource object
+	 */
+	public DataSource register( DataSource target ) {
+		this.datasources.put( target.getUniqueName(), target );
+		return target;
 	}
 
 	/**
@@ -360,7 +410,7 @@ public class ConnectionManager {
 	 */
 	public DataSource register( Key datasourceName, IStruct properties ) {
 		DataSource target = this.datasourceService.register( new DatasourceConfig( datasourceName, properties ) );
-		datasources.put( datasourceName, target );
+		this.datasources.put( datasourceName, target );
 		return target;
 	}
 
@@ -384,7 +434,7 @@ public class ConnectionManager {
 	/**
 	 * Get an on-the-fly datasource from a struct configuration.
 	 *
-	 * @param properties The datasource properties to use
+	 * @param properties The datasource properties to declared for the on the fly datasource
 	 *
 	 * @return A new or already registered datasource
 	 */
@@ -400,7 +450,9 @@ public class ConnectionManager {
 		DatasourceConfig config = new DatasourceConfig(
 		    Key.of( datasourceName.getName() ),
 		    properties
-		).setOnTheFly();
+		)
+		    .withAppName( getApplicationName() )
+		    .setOnTheFly();
 
 		// Register it
 		target = this.datasourceService.register( config );

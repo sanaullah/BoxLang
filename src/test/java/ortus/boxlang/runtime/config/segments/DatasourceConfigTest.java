@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ortus.boxlang.runtime.config.segments;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -240,34 +239,26 @@ class DatasourceConfigTest {
 		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", hikariConfig.getJdbcUrl() );
 	}
 
-	@DisplayName( "It can use a flat map in datasourceConfig.fromStruct" )
+	@DisplayName( "It casts numeric values correctly upon instantation" )
 	@Test
-	void testFromStructFlat() {
-		DatasourceConfig	datasource		= DatasourceConfig.fromStruct( Struct.of(
+	void testNumericCasting() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "driver", "postgresql",
-		    "host", "127.0.0.1",
-		    "port", 5432,
-		    "database", "foo"
-		) );
+		    "port", "5432",
+		    "database", "integerTest",
+		    "minConnections", "1",
+		    "maxConnections", "11",
+		    "connectionTimeout", "30000",
+		    "idleTimeout", "600000",
+		    "maxLifetime", "180000"
+		) ).setOnTheFly();
+
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-
-		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", hikariConfig.getJdbcUrl() );
-	}
-
-	@DisplayName( "It can use a properties struct in datasourceConfig.fromStruct" )
-	@Test
-	void testFromStructProperties() {
-		DatasourceConfig	datasource		= DatasourceConfig.fromStruct( Struct.of(
-		    "properties", Struct.of(
-		        "driver", "postgresql",
-		        "host", "127.0.0.1",
-		        "port", 5432,
-		        "database", "foo"
-		    )
-		) );
-		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-
-		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", hikariConfig.getJdbcUrl() );
+		assertEquals( hikariConfig.getMinimumIdle(), 1 );
+		assertEquals( hikariConfig.getMaximumPoolSize(), 11 );
+		assertEquals( hikariConfig.getConnectionTimeout(), 30000 );
+		assertEquals( hikariConfig.getIdleTimeout(), 600000 );
+		assertEquals( hikariConfig.getMaxLifetime(), 180000 );
 	}
 
 	@DisplayName( "It can skip driver in place of jdbc url" )

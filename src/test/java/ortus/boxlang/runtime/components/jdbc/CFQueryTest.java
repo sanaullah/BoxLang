@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
-import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
@@ -167,7 +166,7 @@ public class CFQueryTest extends BaseJDBCTest {
 		// Register the named datasource
 		getInstance().getConfiguration().runtime.datasources.put(
 		    Key.of( dbName ),
-		    DatasourceConfig.fromStruct( JDBCTestUtils.getDatasourceConfig( dbName.getName() ) )
+		    JDBCTestUtils.buildDatasourceConfig( dbName.getName() )
 		);
 
 		// @formatter:off
@@ -354,6 +353,21 @@ public class CFQueryTest extends BaseJDBCTest {
 		assertThat( result.getAsLong( Key.executionTime ) ).isAtLeast( 0 );
 
 		assertFalse( result.containsKey( "generatedKey" ) );
+	}
+
+	@DisplayName( "It closes connection on completion" )
+	@Test
+	public void testConnectionClose() {
+		Integer initiallyActive = getDatasource().getPoolStats().getAsInteger( Key.of( "ActiveConnections" ) );
+		getInstance().executeSource(
+		    """
+		      <bx:query name="result">
+		      SELECT COUNT() FROM developers
+		      </bx:query>
+		    """,
+		    getContext(), BoxSourceType.CFTEMPLATE );
+		Integer subsequentActive = getDatasource().getPoolStats().getAsInteger( Key.of( "ActiveConnections" ) );
+		assertEquals( initiallyActive, subsequentActive );
 	}
 
 }
