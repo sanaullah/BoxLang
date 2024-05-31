@@ -293,7 +293,6 @@ public class TimeUnitsTest {
 	@DisplayName( "It tests the BIF DayOfWeek with parse date/time" )
 	@Test
 	public void testBifDayOfWeekWithParseDateTime() {
-		Integer refDayOfWeek = LocalDate.of( 2024, Month.APRIL, 7 ).getDayOfWeek().getValue();
 		instance.executeSource(
 		    """
 		    now = parseDateTime( "2024-04-07" );
@@ -301,7 +300,7 @@ public class TimeUnitsTest {
 		       """,
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
-		assertEquals( refDayOfWeek, result );
+		assertEquals( result, 1 );
 	}
 
 	@DisplayName( "It tests the DateTime Member function DayOfWeek" )

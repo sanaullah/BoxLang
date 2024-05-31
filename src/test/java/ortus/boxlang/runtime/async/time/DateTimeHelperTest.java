@@ -13,8 +13,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DateTimeHelperTest {
 
-	DateTimeHelper dateTimeHelper;
-
 	@BeforeEach
 	void setUp() {
 		// Create a test fixture
